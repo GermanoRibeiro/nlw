@@ -18,27 +18,32 @@ export default class ClassesController {
         const week_day = filters.week_day as string;
         const time = filters.time as string;
 
-        if (!filters.week_day || !filters.subject || !filters.time) {
-            return response.status(400).json({
-                erro: 'Missing filters to search classes'
-            })
-        }
+         if (!filters.week_day || !filters.subject || !filters.time) {
+             return response.status(400).json({
+                 erro: 'Missing filters to search classes'
+             })
+         }
 
         const timeInMinutes = convertHourToMinutes(time)
 
 
-const classes = await db.raw(`SELECT classes.* FROM classes WHERE classes.subject = ${subject}`)
-console.log(classes);
-        // const classes = await db('classes')
-        // .whereExists(function(){
-        //     this.select('class_schedule.*')
-        //     .from('class_schedule')
-        //     .whereRaw('`class_schedule`.`class_id` = `classes`.`id`')
-        //     .whereRaw('`class_schedule`.`week_day` = ??', [Number(week_day)])
-        // })
-        //     .where('classes.subject', '=', subject)
-        //     .join('users', 'classes.user_id', '=', 'users.id')
-        //     .select(['classes.*', 'users.*']);
+// const classes = await db.raw(`SELECT * FROM CLASSES C 
+// INNER JOIN CLASS_SCHEDULE CS ON CS.CLASS_ID = C.ID
+// INNER JOIN USERS U ON U.ID = C.USER_ID
+// WHERE C.SUBJECT = '${subject}' AND CS.WEEK_DAY = ${week_day} AND CS.FROM <= ${timeInMinutes}`)
+// console.log(classes);
+         const classes = await db('classes')
+         .whereExists(function(){
+             this.select('class_schedule.*')
+             .from('class_schedule')
+             .whereRaw('`class_schedule`.`class_id` = `classes`.`id`')
+             .whereRaw('`class_schedule`.`week_day` = ??', [Number(week_day)])
+             .whereRaw('`class_schedule`.`from` <=??',[timeInMinutes])
+             .whereRaw('`class_schedule`.`to` >??',[timeInMinutes])
+         })
+             .where('classes.subject', '=', subject)
+             .join('users', 'classes.user_id', '=', 'users.id')
+             .select(['classes.*', 'users.*']);
 
 
 
